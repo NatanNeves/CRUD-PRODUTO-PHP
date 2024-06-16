@@ -6,82 +6,76 @@ use App\Models\Entidades\Usuario;
 
 class UsuarioDAO extends BaseDAO
 {
-    public function listar($login = null)
+    public function listar()
     {
-        if ($login) {
-            $resultado = $this->select("SELECT * FROM usuario WHERE login = :login", [':login' => $login]);
-            return $resultado->fetchObject(Usuario::class);
-        } else {
-            $resultado = $this->select("SELECT * FROM usuario");
-            return $resultado->fetchAll(\PDO::FETCH_CLASS, Usuario::class);
-        }
+        $resultado = $this->select('SELECT * FROM usuario');
+        return $resultado->fetchAll(\PDO::FETCH_CLASS, Usuario::class);
     }
 
     public function salvar(Usuario $usuario)
-    {
-        try {
-            $login = $usuario->getLogin();
-            $nome = $usuario->getNome();
-            $senha = $usuario->getSenha();
-            $email = $usuario->getEmail();
-            $permissao = $usuario->getPermissao();
+{
+    try {
+        $nome = $usuario->getNome();
+        $login = $usuario->getLogin();
+        $senha = $usuario->getSenha();
 
-            return $this->insert(
-                'usuario',
-                ":login, :nome, :senha, :email, :permissao",
-                [
-                    ':login' => $login,
-                    ':nome' => $nome,
-                    ':senha' => $senha,
-                    ':email' => $email,
-                    ':permissao' => $permissao
-                ]
-            );
-        } catch (\Exception $e) {
-            throw new \Exception("Erro na gravação de dados.", 500);
-        }
+        return $this->insert(
+            'usuario',
+            "nome, login, senha",
+            [':nome' => $nome, ':login' => $login, ':senha' => $senha]
+        );
+
+    } catch (\Exception $e) {
+        throw new \Exception("Erro na gravação de dados.", 500);
     }
+}
+
 
     public function atualizar(Usuario $usuario)
     {
         try {
-            $login = $usuario->getLogin();
+            $id = $usuario->getId();
             $nome = $usuario->getNome();
+            $login = $usuario->getLogin();
             $senha = $usuario->getSenha();
-            $email = $usuario->getEmail();
-            $permissao = $usuario->getPermissao();
 
             return $this->update(
                 'usuario',
-                "nome = :nome, senha = :senha, email = :email, permissao = :permissao",
-                [
-                    ':login' => $login,
-                    ':nome' => $nome,
-                    ':senha' => $senha,
-                    ':email' => $email,
-                    ':permissao' => $permissao
-                ],
-                "login = :login"
+                "nome = :nome, login = :login, senha = :senha",
+                [':id' => $id, ':nome' => $nome, ':login' => $login, ':senha' => $senha],
+                "id = :id"
             );
+
         } catch (\Exception $e) {
-            throw new \Exception("Erro na atualização de dados.", 500);
+            throw new \Exception("Erro na gravação de dados.", 500);
         }
     }
 
     public function excluir(Usuario $usuario)
     {
         try {
-            $login = $usuario->getLogin();
+            $id = $usuario->getId();
 
-            return $this->delete('usuario', "login = :login", [':login' => $login]);
+            return $this->delete('usuario', "id = :id", [':id' => $id]);
+
         } catch (\Exception $e) {
-            throw new \Exception("Erro ao excluir dados.", 500);
+            throw new \Exception("Erro ao deletar", 500);
         }
     }
 
-    public function autenticar($login, $senha)
+    public function buscarPorLogin($login)
     {
-        $resultado = $this->select("SELECT * FROM usuario WHERE login = :login AND senha = :senha", [':login' => $login, ':senha' => $senha]);
+        $resultado = $this->select("SELECT * FROM usuario WHERE login = :login", [':login' => $login]);
         return $resultado->fetchObject(Usuario::class);
+    }
+
+    public function buscarPorId($id)
+    {
+        try {
+            $resultado = $this->select('SELECT * FROM usuario WHERE id = :id', [':id' => $id]);
+            return $resultado->fetchObject(Usuario::class);
+        } catch (\Exception $e) {
+            throw new \Exception("Erro ao buscar usuário por ID: " . $e->getMessage());
+        }
     }
 }

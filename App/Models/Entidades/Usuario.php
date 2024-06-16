@@ -1,13 +1,23 @@
 <?php
-
 namespace App\Models\Entidades;
 
-class Usuario{
+class Usuario
+{
     private $login;
     private $nome;
     private $senha;
     private $email;
     private $permissao;
+
+    public function getId()
+    {
+        return $this->login;
+    }
+
+    public function setId($login)
+    {
+        $this->login = $login;
+    }
 
     public function getLogin()
     {
@@ -59,12 +69,13 @@ class Usuario{
         $this->permissao = $permissao;
     }
 
-    public function setUsuario($dadosform)
+    public function setUsuario(array $dados)
     {
-        $this->setLogin($dadosform['login']);
-        $this->setNome($dadosform['nome']);
-        $this->setSenha($dadosform['senha']);
-        $this->setEmail($dadosform['email']);
-        $this->setPermissao($dadosform['permissao']);
+        $this->login = $dados['login'] ?? $this->login;
+        $this->nome = $dados['nome'] ?? $this->nome;
+        $this->senha = $dados['senha'] ?? $this->senha;
+        $this->email = $dados['email'] ?? $this->email;
+        $this->permissao = $dados['permissao'] ?? $this->permissao;
     }
 }
+?>

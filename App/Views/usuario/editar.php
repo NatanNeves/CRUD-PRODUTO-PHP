@@ -4,29 +4,29 @@
       <div class="col-md-3"></div>
       <div class="col-md-6">
         <h1 class="mt-2">Editar Usuário</h1>
+        
         <?php
-          echo $Sessao::retornaMensagem();
-          $Sessao::limpaMensagem();
+        // Mensagens de Erro ou Sucesso na execução das funções
+        echo \App\Lib\Sessao::retornaMensagem();
+        \App\Lib\Sessao::limpaMensagem();
         ?>
-        <form action="<?php echo 'http://' . APP_HOST . '/usuario/salvar/editar'; ?>" method="post" id="formEdicao">
+        
+        <form action="<?php echo 'http://'.APP_HOST.'/usuario/atualizar'; ?>" method="post" id="formEditarUsuario">
           <div class="form-group">
-            <label for="nome">Nome</label>
+            <input type="hidden" name="id" value="<?php echo $viewVar['usuario']->getId(); ?>">
+          </div>
+          <div class="form-group">
+            <label for="nome">Nome do Usuário</label>
             <input type="text" class="form-control" name="nome" value="<?php echo $viewVar['usuario']->getNome(); ?>" required>
           </div>
           <div class="form-group">
             <label for="login">Login</label>
-            <input type="text" class="form-control" name="login" value="<?php echo $viewVar['usuario']->getLogin(); ?>" required readonly>
-          </div>
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input type="email" class="form-control" name="email" value="<?php echo $viewVar['usuario']->getEmail(); ?>" required>
+            <input type="text" class="form-control" name="login" value="<?php echo $viewVar['usuario']->getLogin(); ?>" required>
           </div>
           <div class="form-group">
             <label for="senha">Senha</label>
-            <input type="password" class="form-control <?php if ($Sessao::retornaErro('errosenha') != "") echo "is-invalid"; ?>" name="senha">
-            <div class="invalid-feedback"> 
-                <?php echo $Sessao::retornaErro('errosenha'); $Sessao::limpaErro(); ?>
-            </div>
+            <input type="password" class="form-control" name="senha" value="">
+            <small class="form-text text-muted">Deixe em branco para manter a senha atual.</small>
           </div>
           <button type="submit" class="btn btn-success btn-sm">Salvar</button>
         </form>
