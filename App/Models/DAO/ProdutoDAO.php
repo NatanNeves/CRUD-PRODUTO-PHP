@@ -24,30 +24,22 @@ class ProdutoDAO extends BaseDAO
         return false;
     }
 
-    public  function salvar(Produto $produto) 
-    {
-        try {
+    public function salvar(Produto $produto)
+{
+    try {
+        $nome = $produto->getNome();
+        $preco = $produto->getPreco();
+        $quantidade = $produto->getQuantidade();
+        $descricao = $produto->getDescricao();
 
-            $nome           = $produto->getNome();
-            $preco          = $produto->getPreco();
-            $quantidade     = $produto->getQuantidade();
-            $descricao      = $produto->getDescricao();
+        $cols = ['nome' => ':nome', 'preco' => ':preco', 'quantidade' => ':quantidade', 'descricao' => ':descricao'];
+        $values = [':nome' => $nome, ':preco' => $preco, ':quantidade' => $quantidade, ':descricao' => $descricao];
 
-            return $this->insert(
-                'produto',
-                ":nome,:preco,:quantidade,:descricao",
-                [
-                    ':nome'=>$nome,
-                    ':preco'=>$preco,
-                    ':quantidade'=>$quantidade,
-                    ':descricao'=>$descricao
-                ]
-            );
-
-        }catch (\Exception $e){
-            throw new \Exception("Erro na gravação de dados.", 500);
-        }
+        return $this->insert('produto', $cols, $values);
+    } catch (\Exception $e) {
+        throw new \Exception("Erro na gravação de dados: " . $e->getMessage(), 500);
     }
+}
 
     public  function atualizar(Produto $produto) 
     {

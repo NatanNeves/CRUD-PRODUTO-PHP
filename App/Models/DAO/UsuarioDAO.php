@@ -13,69 +13,67 @@ class UsuarioDAO extends BaseDAO
     }
 
     public function salvar(Usuario $usuario)
-{
-    try {
-        $nome = $usuario->getNome();
-        $login = $usuario->getLogin();
-        $senha = $usuario->getSenha();
-
-        return $this->insert(
-            'usuario',
-            "nome, login, senha",
-            [':nome' => $nome, ':login' => $login, ':senha' => $senha]
-        );
-
-    } catch (\Exception $e) {
-        throw new \Exception("Erro na gravação de dados.", 500);
-    }
-}
-
-
-    public function atualizar(Usuario $usuario)
     {
         try {
-            $id = $usuario->getId();
             $nome = $usuario->getNome();
             $login = $usuario->getLogin();
             $senha = $usuario->getSenha();
 
-            return $this->update(
-                'usuario',
-                "nome = :nome, login = :login, senha = :senha",
-                [':id' => $id, ':nome' => $nome, ':login' => $login, ':senha' => $senha],
-                "id = :id"
-            );
+            $cols = ['nome' => $nome, 'login' => $login, 'senha' => $senha];
+            $values = [':nome' => $nome, ':login' => $login, ':senha' => $senha];
 
+            $this->insert('usuario', $cols, $values);
         } catch (\Exception $e) {
-            throw new \Exception("Erro na gravação de dados.", 500);
+            throw new \Exception("Erro na gravação de dados: " . $e->getMessage(), 500);
         }
     }
+
+    public function atualizar(Usuario $usuario)
+{
+    try {
+        $login = $usuario->getLogin();
+        $nome = $usuario->getNome();
+        $senha = $usuario->getSenha();
+
+        // Define os dados a serem atualizados
+        $cols = ['nome' => ':nome', 'senha' => ':senha'];
+        $values = [':nome' => $nome, ':senha' => $senha, ':login' => $login];
+
+        // Realiza a atualização na tabela 'usuario'
+        return $this->update(
+            'usuario',
+            $cols, // Colunas a serem atualizadas
+            $values, // Valores correspondentes
+            "login = :login" // Condição WHERE
+        );
+    } catch (\Exception $e) {
+        throw new \Exception("Erro na atualização de dados: " . $e->getMessage(), 500);
+    }
+}
 
     public function excluir(Usuario $usuario)
     {
         try {
-            $id = $usuario->getId();
-
-            return $this->delete('usuario', "id = :id", [':id' => $id]);
-
+            $login = $usuario->getLogin();
+            return $this->delete('usuario', "login = :login", [':login' => $login]);
         } catch (\Exception $e) {
-            throw new \Exception("Erro ao deletar", 500);
+            throw new \Exception("Erro ao deletar usuário: " . $e->getMessage(), 500);
         }
     }
 
+
+
     public function buscarPorLogin($login)
     {
-        $resultado = $this->select("SELECT * FROM usuario WHERE login = :login", [':login' => $login]);
-        return $resultado->fetchObject(Usuario::class);
-    }
-
-    public function buscarPorId($id)
-    {
         try {
-            $resultado = $this->select('SELECT * FROM usuario WHERE id = :id', [':id' => $id]);
-            return $resultado->fetchObject(Usuario::class);
-        } catch (\Exception $e) {
-            throw new \Exception("Erro ao buscar usuário por ID: " . $e->getMessage());
+            $sql = "SELECT * FROM usuario WHERE login = :login";
+            $stmt = $this->conexao->prepare($sql);
+            $stmt->bindValue(':login', $login);
+            $stmt->execute();
+
+            return $stmt->fetchObject(Usuario::class);
+        } catch (\PDOException $e) {
+            throw new \Exception("Erro ao buscar usuário por login: " . $e->getMessage(), 500);
         }
     }
 }

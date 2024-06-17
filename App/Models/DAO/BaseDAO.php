@@ -6,76 +6,88 @@ use App\Lib\Conexao;
 
 abstract class BaseDAO
 {
-    private $conexao;
+    protected $conexao;
 
     public function __construct()
     {
         $this->conexao = Conexao::getConnection();
     }
 
-    public function select($sql) 
+    public function select($sql, $params = [])
     {
-        if(!empty($sql))
-        {
-            return $this->conexao->query($sql);
+        if (!empty($sql)) {
+            $stmt = $this->conexao->prepare($sql);
+            $stmt->execute($params);
+            return $stmt;
         }
+        return false;
     }
 
-    public function insert($table, $cols, $values) 
+    public function insert($table, $cols, $values)
     {
-        if(!empty($table) && !empty($cols) && !empty($values))
-        {
-            $parametros    = $cols;
-            $colunas       = str_replace(":", "", $cols);
-            
-            //             $table   $colunas             $cols
-            //INSERT INTO usuario (nome,email) VALUES (:nome,:email);
+        if (!empty($table) && is_array($cols) && is_array($values)) {
+            $colunas = implode(', ', array_keys($cols));
+            $parametros = implode(', ', array_keys($values));
+
             $stmt = $this->conexao->prepare("INSERT INTO $table ($colunas) VALUES ($parametros)");
-            $stmt->execute($values);
 
-            return $stmt->rowCount();
-        }else{
-            return false;
-        }
-    }
-
-    public function update($table, $cols, $values, $where=null) 
-    {
-        if(!empty($table) && !empty($cols) && !empty($values))
-        {
-            if($where)
-            {
-                $where = " WHERE $where ";
+            foreach ($values as $key => &$value) {
+                $stmt->bindParam($key, $value);
             }
 
-            $stmt = $this->conexao->prepare("UPDATE $table SET $cols $where");
-            $stmt->execute($values);
-
-            return $stmt->rowCount();
-        }else{
-            return false;
-        }
-    }
-    
-    public function delete($table, $where=null) 
-    {
-        if(!empty($table))
-        {
-            /*
-                DELETE produto WHERE id = 1
-            */
-
-            if($where)
-            {
-                $where = " WHERE $where ";
-            }
-
-            $stmt = $this->conexao->prepare("DELETE FROM $table $where");
             $stmt->execute();
 
             return $stmt->rowCount();
-        }else{
+        } else {
             return false;
         }
     }
+
+    public function update($table, $cols, $values, $where = null)
+    {
+        if (!empty($table) && is_array($cols) && is_array($values)) {
+            if ($where) {
+                $where = " WHERE $where ";
+            }
+
+            $setCols = [];
+            foreach ($cols as $col => $param) {
+                $setCols[] = "$col = $param";
+            }
+            $setCols = implode(", ", $setCols);
+
+            $stmt = $this->conexao->prepare("UPDATE $table SET $setCols $where");
+            $stmt->execute($values);
+
+            return $stmt->rowCount();
+        } else {
+            return false;
+        }
+    }
+
+    public function delete($table, $where = null, $params = [])
+{
+    try {
+        if (!empty($table)) {
+            $sql = "DELETE FROM $table";
+            if ($where) {
+                $sql .= " WHERE $where";
+            }
+
+            $stmt = $this->conexao->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->rowCount();
+        } else {
+            return false;
+        }
+    } catch (\PDOException $e) {
+        // Captura e relança a exceção PDOException
+        throw $e;
+    } catch (\Exception $e) {
+        // Captura e relança exceções genéricas
+        throw $e;
+    }
+}
+
 }

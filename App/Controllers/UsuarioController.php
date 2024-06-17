@@ -1,21 +1,46 @@
 <?php
 
+
 namespace App\Controllers;
 
 use App\Lib\Sessao;
-use App\Lib\Util;
+use App\Lib\Util; // Importe a classe Util aqui
+
 use App\Models\DAO\UsuarioDAO;
 use App\Models\Entidades\Usuario;
 
 class UsuarioController extends Controller
 {
+    
+    public function excluirConfirma($params)
+    {
+        $login = urldecode($params[0]);
+
+        $usuarioDAO = new UsuarioDAO();
+        $usuario = $usuarioDAO->buscarPorLogin($login);
+
+        if (!$usuario) {
+            Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
+        }
+
+        $this->setViewParam('usuario', $usuario);
+        $this->render('/usuario/excluirConfirma');
+
+        Sessao::limpaMensagem();
+    }
+    
     public function listar()
     {
-        $usuarioDAO = new UsuarioDAO();
-        $usuarios = $usuarioDAO->listar();
+        try {
+            $usuarioDAO = new UsuarioDAO();
+            $usuarios = $usuarioDAO->listar();
 
-        self::setViewParam('usuarios', $usuarios);
-        $this->render('/usuario/listar');
+            $this->setViewParam('usuarios', $usuarios);
+            $this->render('/usuario/listar');
+        } catch (\Exception $e) {
+            Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Erro ao listar usuários: ' . $e->getMessage() . '</div>');
+            $this->render('/erro/index');
+        }
 
         Sessao::limpaMensagem();
     }
@@ -55,61 +80,63 @@ class UsuarioController extends Controller
     }
 
     public function editar($params)
-    {
-        $id = $params[0]; // Supondo que o parâmetro seja o ID do usuário
+{
+    $login = $params[0]; // Supondo que o parâmetro seja o login do usuário
 
-        $usuarioDAO = new UsuarioDAO();
-        $usuario = $usuarioDAO->buscarPorId($id);
+    $usuarioDAO = new UsuarioDAO();
+    $usuario = $usuarioDAO->buscarPorLogin($login);
 
-        if (!$usuario) {
-            Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
-            $this->redirect('/usuario/listar');
-        }
-
-        self::setViewParam('usuario', $usuario);
-        $this->render('/usuario/editar');
-
-        Sessao::limpaMensagem();
+    if (!$usuario) {
+        Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
+        $this->redirect('/usuario/listar');
     }
 
+    $this->setViewParam('usuario', $usuario);
+    $this->render('/usuario/editar');
+
+    Sessao::limpaMensagem();
+}
+
     public function atualizar()
+{
+    $dadosForm = Util::sanitizar($_POST);
+
+    // Busca o usuário existente para edição
+    $usuarioDAO = new UsuarioDAO();
+    $usuario = $usuarioDAO->buscarPorLogin($dadosForm['login']);
+
+    if (!$usuario) {
+        Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
+        $this->redirect('/usuario/listar');
+    }
+
+    // Atualiza os atributos do usuário com os novos valores do formulário
+    $usuario->setNome($dadosForm['nome']);
+
+    // Verifica se a senha foi alterada no formulário
+    if (!empty($dadosForm['senha'])) {
+        $usuario->setSenha($dadosForm['senha']);
+    }
+
+    try {
+        $usuarioDAO->atualizar($usuario);
+        Sessao::gravaMensagem('<div class="alert alert-success" role="alert">Usuário atualizado com sucesso.</div>');
+        $this->redirect('/usuario/listar');
+    } catch (\Exception $e) {
+        Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">' . $e->getMessage() . '</div>');
+        $this->redirect('/usuario/editar/' . $usuario->getLogin()); // Redireciona usando o login do usuário
+    }
+}
+
+   public function excluir()
     {
         $dadosForm = Util::sanitizar($_POST);
 
-        // Busca o usuário existente para edição
-        $usuarioDAO = new UsuarioDAO();
-        $usuario = $usuarioDAO->buscarPorId($dadosForm['id']);
-
-        if (!$usuario) {
-            Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
-            $this->redirect('/usuario/listar');
-        }
-
-        // Atualiza os atributos do usuário com os novos valores do formulário
-        $usuario->setNome($dadosForm['nome']);
-        $usuario->setLogin($dadosForm['login']);
-
-        // Verifica se a senha foi alterada no formulário
-        if (!empty($dadosForm['senha'])) {
-            $usuario->setSenha($dadosForm['senha']);
-        }
-
-        try {
-            $usuarioDAO->atualizar($usuario);
-            Sessao::gravaMensagem('<div class="alert alert-success" role="alert">Usuário atualizado com sucesso.</div>');
-            $this->redirect('/usuario/listar');
-        } catch (\Exception $e) {
-            Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">' . $e->getMessage() . '</div>');
-            $this->redirect('/usuario/editar/' . $usuario->getId()); // Redireciona usando o ID do usuário
-        }
-    }
-
-    public function excluir($params)
-    {
-        $id = $params[0]; // Supondo que o parâmetro seja o ID do usuário
+        // Recupera o login do usuário a ser excluído
+        $login = $dadosForm['login'];
 
         $usuarioDAO = new UsuarioDAO();
-        $usuario = $usuarioDAO->buscarPorId($id);
+        $usuario = $usuarioDAO->buscarPorLogin($login);
 
         if (!$usuario) {
             Sessao::gravaMensagem('<div class="alert alert-danger" role="alert">Usuário não encontrado.</div>');
